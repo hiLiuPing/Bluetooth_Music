@@ -45,7 +45,6 @@ typedef struct {
         uint8_t is_charging; 
     } battery;
     int8_t temp;          
-    uint8_t is_playing;
 } UI_Global_t;
 
 extern UI_Global_t g_ui;

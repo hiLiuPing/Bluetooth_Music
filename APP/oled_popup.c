@@ -97,22 +97,34 @@ void Draw_SystemMsgPopup(u8g2_t *u8g2, UI_Comp_t *base, void *data) {
     // 获取动画实时y坐标
     int y_pos = (int)base->y; 
 
-    // 1. 绘制圆角背景（白色）
-    u8g2_SetDrawColor(u8g2, 1);
-    u8g2_DrawRBox(u8g2, 14, y_pos + 6, 100, 18, 4); 
-
-    // 2. 绘制反色文字（黑色）
-    u8g2_SetDrawColor(u8g2, 0);
+    // 文字字体（必须和绘制文字用同一个）
     u8g2_SetFont(u8g2, u8g2_font_6x12_tf);
     
-    // 文字居中计算
+    // ===================== 核心改动 =====================
+    // 1. 先获取文字宽度
     int str_w = u8g2_GetStrWidth(u8g2, msg);
-    int start_x = (128 - str_w) / 2;
-    int start_y = y_pos + 19;
     
+    // 2. 背景宽度 = 文字宽度 + 左右内边距（左右各留8像素，可自己改）
+    int box_w = str_w + 16;  
+    int box_h = 18;          // 背景高度固定
+    int box_r = 4;           // 圆角半径
+    
+    // 3. 背景框居中（屏幕128宽）
+    int box_x = (128 - box_w) / 2;  // 自动居中X
+    int box_y = y_pos + 6;          // Y不变
+    // ===================================================
+
+    // 绘制圆角背景（白色）
+    u8g2_SetDrawColor(u8g2, 1);
+    u8g2_DrawRBox(u8g2, box_x, box_y, box_w, box_h, box_r); 
+
+    // 绘制反色文字（黑色）
+    u8g2_SetDrawColor(u8g2, 0);
+    int start_x = (128 - str_w) / 2;  // 文字居中
+    int start_y = y_pos + 19;
     u8g2_DrawStr(u8g2, start_x, start_y, msg);
 
-    // 3. 还原画笔颜色
+    // 还原画笔颜色
     u8g2_SetDrawColor(u8g2, 1);
 }
 

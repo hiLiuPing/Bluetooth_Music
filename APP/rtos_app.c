@@ -588,7 +588,7 @@ void vOLED_Task(void *arg)
     // 初始化 UI 框架
     OLED_UI_Init(&hi2c2);
     
-OLED_UI_SetBattery(60, 1);
+OLED_UI_SetBattery(60, 0);
 
     while (1)
     {

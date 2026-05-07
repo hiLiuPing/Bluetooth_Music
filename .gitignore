@@ -13,3 +13,33 @@
 # eide template
 *.ept
 *.eide-template
+# 过滤 编译输出 / 可执行文件
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.bin
+*.elf
+*.hex
+
+# 过滤 库文件
+*.a
+*.lib
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# 过滤 日志、临时文件
+*.log
+*.tmp
+*.temp
+*.cache
+
+# 过滤 编译目录（C/C++/Java 常用）
+build/
+bin/
+obj/
+out/
+cmake-build-*/
