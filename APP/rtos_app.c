@@ -558,7 +558,7 @@ void vMusic_Task(void *pvParameters)
     MusicCtrlCmd cmd;
     Music_Ctrl_Init(); // 初始化状态和按键
     // 调试的时候关机
-    // Music_PowerOn();    // 开机  
+    Music_PowerOn();    // 开机  
      vTaskDelay(pdMS_TO_TICKS(500)); // 等待设备稳定
     while (1)
     {
