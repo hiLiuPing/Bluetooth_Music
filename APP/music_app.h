@@ -6,26 +6,26 @@
 #include "task.h"
 #include "queue.h"
 
-// 连接状态
-typedef enum
-{
-    CONN_DISCONNECTED,  // 未连接
-    CONN_CONNECTED      // 已连接
-} ConnectStatus;
+// // 连接状态
+// typedef enum
+// {
+//     CONN_DISCONNECTED,  // 未连接
+//     CONN_CONNECTED      // 已连接
+// } ConnectStatus;
 
-// 播放状态
-typedef enum
-{
-    PLAY_PAUSE,     // 暂停
-    PLAY_PLAY       // 播放
-} PlayStatus;
+// // 播放状态
+// typedef enum
+// {
+//     PLAY_PAUSE,     // 暂停
+//     PLAY_PLAY       // 播放
+// } PlayStatus;
 
-// 音频状态
-typedef enum
-{
-    AUDIO_NONE,     // 无音频
-    AUDIO_HAVE      // 有音频
-} AudioStatus;
+// // 音频状态
+// typedef enum
+// {
+//     AUDIO_NONE,     // 无音频
+//     AUDIO_HAVE      // 有音频
+// } AudioStatus;
 
 // 音乐控制命令
 typedef enum
@@ -41,12 +41,12 @@ typedef enum
     CMD_VOL_DOWN    // 音量-
 } MusicCtrlCmd;
 
-// 全局状态结构体（三合一，方便管理）
-typedef struct {
-    ConnectStatus conn;   // 连接状态
-    PlayStatus    play;   // 播放状态
-    AudioStatus   audio;  // 音频存在状态
-} MusicStatus_t;
+// // 全局状态结构体（三合一，方便管理）
+// typedef struct {
+//     ConnectStatus conn;   // 连接状态
+//     PlayStatus    play;   // 播放状态
+//     AudioStatus   audio;  // 音频存在状态
+// } MusicStatus_t;
 typedef struct
 {
     GPIO_TypeDef* port;
@@ -66,13 +66,13 @@ typedef enum
 } KeyIndexTypeDef;
 
 // 全局变量
-extern MusicStatus_t g_music_status;
+// extern MusicStatus_t g_music_status;
 extern QueueHandle_t music_cmd_queue;
 
 // 函数
 void music_app_init(void);
 void music_send_cmd(MusicCtrlCmd cmd);
-void Music_Ctrl_Init(void);
+// void Music_Ctrl_Init(void);
 
 // 每个功能独立函数
 void Music_Play_Stop(void);

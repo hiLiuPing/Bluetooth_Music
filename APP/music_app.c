@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "log.h"
 // 全局状态变量
-MusicStatus_t g_music_status;
+// MusicStatus_t g_music_status;
 
 // 命令队列
 QueueHandle_t music_cmd_queue;
@@ -11,10 +11,10 @@ QueueHandle_t music_cmd_queue;
 // ===================== 初始化（队列 + 三种状态） =====================
 void music_app_init(void)
 {
-    // ========== 1. 初始化三种状态（默认值） ==========
-    g_music_status.conn  = CONN_DISCONNECTED;  // 未连接
-    g_music_status.play  = PLAY_PAUSE;        // 暂停
-    g_music_status.audio = AUDIO_NONE;        // 无音频
+    // // ========== 1. 初始化三种状态（默认值） ==========
+    // g_music_status.conn  = CONN_DISCONNECTED;  // 未连接
+    // g_music_status.play  = PLAY_PAUSE;        // 暂停
+    // g_music_status.audio = AUDIO_NONE;        // 无音频
 
     // ========== 2. 创建命令队列 ==========
     music_cmd_queue = xQueueCreate(QUEUE_LEN, sizeof(MusicCtrlCmd));
@@ -52,19 +52,19 @@ const KeyGpioTypeDef key_gpio[KEY_NUM] = {
 };
 
 // ==================== 初始化 ====================
-void Music_Ctrl_Init(void)
-{
-    // 状态初始化
-    g_music_status.conn  = CONN_DISCONNECTED;
-    g_music_status.play  = PLAY_PAUSE;
-    g_music_status.audio = AUDIO_NONE;
+// void Music_Ctrl_Init(void)
+// {
+//     // 状态初始化
+//     // g_music_status.conn  = CONN_DISCONNECTED;
+//     // g_music_status.play  = PLAY_PAUSE;
+//     // g_music_status.audio = AUDIO_NONE;
 
-    // 所有按键默认低电平
-    for(int i=0; i<KEY_NUM; i++)
-    {
-        HAL_GPIO_WritePin(key_gpio[i].port, key_gpio[i].pin, GPIO_PIN_RESET);
-    }
-}
+//     // 所有按键默认低电平
+//     for(int i=0; i<KEY_NUM; i++)
+//     {
+//         HAL_GPIO_WritePin(key_gpio[i].port, key_gpio[i].pin, GPIO_PIN_RESET);
+//     }
+// }
 
 
 // ==================== 模拟单击 ====================
@@ -143,15 +143,14 @@ void Music_ClearPair(void)
     // log_printf("执行：清除配对记录\r\n");
     log_printf("Music_ClearPair\r\n");
     SimKey_LongPress(KEY5, 5); // 模拟配对键长按5S
-    g_music_status.conn = CONN_DISCONNECTED;
+    // g_music_status.conn = CONN_DISCONNECTED;
 }
 
 void Music_PowerOn(void)
 {
-    // log_printf("执行：开机\r\n");
+
     log_printf("Music_PowerOn\r\n");
-//     #define AD_PWER_EN_Pin GPIO_PIN_3
-// #define AD_PWER_EN_GPIO_Port GPIOA
+
 // 先打开AD电源，再打开蓝牙电源，确保稳定开机
     HAL_GPIO_WritePin(AD_PWER_EN_GPIO_Port, AD_PWER_EN_Pin, GPIO_PIN_SET);
     vTaskDelay(pdMS_TO_TICKS(50));
