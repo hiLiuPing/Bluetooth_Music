@@ -30,6 +30,10 @@ typedef enum {
     UI_EVT_STOP,
     UI_EVT_VOL_UP,
     UI_EVT_VOL_DOWN,
+    UI_EVT_TEMPERATURE_HIGH, // 温度高事件
+    UI_EVT_TEMPERATURE_NORMAL, // 温度恢复正常事件
+    UI_EVT_BLUETOOTH_CONNECTED, // 蓝牙连接事件
+    UI_EVT_BLUETOOTH_DISCONNECTED, // 蓝牙断开事件
     UI_EVT_BATTERY_LOW, // 电量低事件
     UI_EVT_BATTERY_FULL, // 电量充满事件
     UI_EVT_BATTERY_CHARGING, // 电量充电事件

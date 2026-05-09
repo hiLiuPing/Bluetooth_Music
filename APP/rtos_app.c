@@ -174,13 +174,14 @@ void vKey_Manllege_Task(void *pvParameters)
                 /* ================= MUSIC模式 ================= */
                 case MUSIC_ON:
 
-                    //    if(g_ble_state.ble_connected == 0)
-                    //  {
-                    //    return;
-                    //  }
+                       if(g_ble_state.ble_connected == 0)
+                     {
+                      OLED_UI_OnEvent(UI_EVT_BLUETOOTH_DISCONNECTED);
+                       break;
+                     }
                     switch(keycmd.id)
                     {
-                        case 0: // OK键
+                        case 0: // 上键
                             if(keycmd.event == BTN_SINGLE_CLICK)
                             {
                                 music_send_cmd(CMD_PREV);
@@ -207,21 +208,21 @@ void vKey_Manllege_Task(void *pvParameters)
                             }
                             break;
 
-                        case 1: // 上键（播放/暂停）
+                        case 1: // 中键（播放/暂停）
                             if(keycmd.event == BTN_SINGLE_CLICK)
                             {
                                 music_send_cmd(CMD_PLAY_STOP);
 
-                                if (g_music_state.music_played)
-                                {
-                                    g_music_state.music_played = 0;
-                                    OLED_UI_SetPage(UI_PAGE_STOP);
-                                }
-                                else
-                                {
-                                    g_music_state.music_played = 1;
-                                    OLED_UI_SetPage(UI_PAGE_PLAY);
-                                }
+                                // if (g_music_state.music_played)
+                                // {
+                                //     g_music_state.music_played = 0;
+                                //     OLED_UI_SetPage(UI_PAGE_STOP);
+                                // }
+                                // else
+                                // {
+                                //     g_music_state.music_played = 1;
+                                //     OLED_UI_SetPage(UI_PAGE_PLAY);
+                                // }
 
                                 LED_Driver_SendCmd(&led_blue, LED_MODE_PWM,
                                     LED_Heartbeat_Handler, 2000, 2000, NULL);
@@ -361,6 +362,10 @@ void vMusic_Task(void *pvParameters)
     {
         if (xQueueReceive(music_cmd_queue, &cmd, portMAX_DELAY) == pdPASS)
         {
+            //   if(g_ble_state.ble_connected == 0)
+            //          {
+            //            return;
+            //          }
             switch (cmd)
             {
                 case CMD_PLAY_STOP:   Music_Play_Stop();     break;
@@ -375,6 +380,7 @@ void vMusic_Task(void *pvParameters)
                 default: break;
             }
         }
+
     }
 }
 

@@ -24,6 +24,7 @@ static UI_Comp_t comp_desc;       // 通用描述文字
 static void UI_DrawWeather_Internal(u8g2_t *u8g2, int x, int y, int8_t temp) {
 
 // 在屏幕 (x, y) 位置显示 32x32 图标
+temp = -10; // 示例温度值
 u8g2_DrawXBM(u8g2, x, y, 32, 32, U8_IMG_100);
     char buf[8]; sprintf(buf, "%dC", temp);
     u8g2_SetFont(u8g2, u8g2_font_6x10_tf);
@@ -236,7 +237,19 @@ void OLED_UI_OnEvent(UI_Event_t event) {
         case UI_EVT_BATTERY_LOW:
             UI_Popup_Show(Draw_SystemMsgPopup, "LOW BATTERY", 1000);
             break;
-         case UI_EVT_NONE:
+        case UI_EVT_TEMPERATURE_HIGH:
+            UI_Popup_Show(Draw_SystemMsgPopup, "TEMP HIGH", 1000);
+            break;
+        case UI_EVT_TEMPERATURE_NORMAL:
+            UI_Popup_Show(Draw_SystemMsgPopup, "TEMP NORMAL", 1000);
+            break;
+        case UI_EVT_BLUETOOTH_CONNECTED:
+            UI_Popup_Show(Draw_SystemMsgPopup, "BT CONNECTED", 1000);
+            break;
+        case UI_EVT_BLUETOOTH_DISCONNECTED:
+            UI_Popup_Show(Draw_SystemMsgPopup, "BT DISCONNECTED", 1000);
+            break;
+        case UI_EVT_NONE:
             break;    
         default:
             break;
