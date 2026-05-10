@@ -95,6 +95,8 @@ void Error_Handler(void);
 #define BAT_GPIO_GPIO_Port GPIOE
 #define POWER_IN_5V_Pin GPIO_PIN_8
 #define POWER_IN_5V_GPIO_Port GPIOE
+#define SPI2_CS_Pin GPIO_PIN_12
+#define SPI2_CS_GPIO_Port GPIOB
 #define ESP32_PWR_EN_Pin GPIO_PIN_10
 #define ESP32_PWR_EN_GPIO_Port GPIOD
 #define MUSIC_ON_Pin GPIO_PIN_1

@@ -6,8 +6,8 @@ packDir: null
 srcDirs:
   - APP
   - BSP
-  - ST7789
-  - u8g2
+  - middle_driver
+  - Core
 virtualFolder:
   name: <virtual_root>
   files: []
@@ -108,8 +108,11 @@ targets:
         - MDK-ARM/RTE/_STM32L476VGT6
         - APP
         - BSP
-        - ST7789
-        - u8g2
+        - middle_driver/boot
+        - middle_driver/LittleFS
+        - middle_driver/lwrb
+        - middle_driver/ST7789
+        - middle_driver/u8g2
       libList: []
     excludeList: []
     settings: {}

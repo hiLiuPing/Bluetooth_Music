@@ -213,17 +213,6 @@ void vKey_Manllege_Task(void *pvParameters)
                             {
                                 music_send_cmd(CMD_PLAY_STOP);
 
-                                // if (g_music_state.music_played)
-                                // {
-                                //     g_music_state.music_played = 0;
-                                //     OLED_UI_SetPage(UI_PAGE_STOP);
-                                // }
-                                // else
-                                // {
-                                //     g_music_state.music_played = 1;
-                                //     OLED_UI_SetPage(UI_PAGE_PLAY);
-                                // }
-
                                 LED_Driver_SendCmd(&led_blue, LED_MODE_PWM,
                                     LED_Heartbeat_Handler, 2000, 2000, NULL);
 
