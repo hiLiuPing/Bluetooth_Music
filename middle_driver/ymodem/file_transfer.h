@@ -30,10 +30,6 @@ void transfer_init(void);
 /* Y-modem 接收 */
 int transfer_receive_file(void);
 
-/* CRC32 */
-uint32_t transfer_crc32(const uint8_t *data, uint32_t size);
-
-
 /* 外部 UART */
 extern UART_HandleTypeDef huart1;
 

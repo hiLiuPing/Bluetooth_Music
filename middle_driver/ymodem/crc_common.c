@@ -1,4 +1,4 @@
-#include "common.h"
+#include "crc_common.h"
 
 static const uint32_t crc32_table[256] = {
     0x00000000U, 0x77073096U, 0xEE0E612CU, 0x990951BAU, 0x076DC419U,

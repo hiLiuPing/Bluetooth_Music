@@ -112,23 +112,3 @@ int transfer_receive_file(void)
 }
 
 
-/* ================= CRC32 ================= */
-uint32_t transfer_crc32(const uint8_t *data, uint32_t size)
-{
-    uint32_t crc = 0xFFFFFFFF;
-
-    for(uint32_t i = 0; i < size; i++)
-    {
-        crc ^= data[i];
-
-        for(int j = 0; j < 8; j++)
-        {
-            if(crc & 1)
-                crc = (crc >> 1) ^ 0xEDB88320;
-            else
-                crc >>= 1;
-        }
-    }
-
-    return crc ^ 0xFFFFFFFF;
-}

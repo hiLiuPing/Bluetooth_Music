@@ -108,11 +108,11 @@ targets:
         - MDK-ARM/RTE/_STM32L476VGT6
         - APP
         - BSP
-        - middle_driver/boot
         - middle_driver/LittleFS
         - middle_driver/lwrb
         - middle_driver/ST7789
         - middle_driver/u8g2
+        - middle_driver/ymodem
       libList: []
     excludeList: []
     settings: {}

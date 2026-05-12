@@ -17,6 +17,10 @@
 // #include "eeprom_app.h"
 // #include "string.h"
 
+#include "ymodem.h"
+#include "lfs_port.h"
+#include "file_transfer.h"
+
 // // #include "sfud.h"
 // // #include "spi.h" // 如果 spi 句柄定义在这里
 // #include "spi_flash.h"
@@ -68,6 +72,16 @@ void vOLED_Task(void *pvParameters);
 #define OLED_Task_STACK_SIZE 512
 #define OLED_Task_PERIOD_MS  20
 TaskHandle_t oled_Task_Handle;
+
+//Transmit任务队列
+
+void vTransmit_Task(void *pvParameters);     
+#define Transmit_Task_PRIORITY   (tskIDLE_PRIORITY + 2)
+#define Transmit_Task_STACK_SIZE 1024
+#define Transmit_Task_PERIOD_MS  20
+TaskHandle_t Transmit_Task_Handle;
+
+
 
 
 
@@ -413,11 +427,8 @@ void vLED_Task(void *pvParameters)
 }
 
 
-
-
-
-
 static void LED_Update(void)
+
 {
     /* =========================
      * 1. BLE未连接（最高优先级）
@@ -470,3 +481,71 @@ static void LED_Update(void)
                            OLED_UI_SetPage(UI_PAGE_PLAY);                      
     }
 }
+
+// void vTransmit_Task(void *pvParameters) {
+//     comm_msg_t msg;
+//     lfs_file_t lfs_file;
+//     lfs_t *lfs = lfs_port_get(); // 获取你 lfs_port.c 里的文件系统指针
+
+//     for (;;) {
+//         // 1. 等待队列指令 (原生 FreeRTOS 函数)
+//         if (xQueueReceive(CommQueueHandle, &msg, portMAX_DELAY) == pdPASS) {
+            
+//             switch (msg.type) {
+                
+//                 case CMD_SYNC_TIME:
+//                     log_printf("[Comm] Requesting Time...\r\n");
+//                     // 发送 AA 01 55 给 ESP32
+//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x01, 0x55}, 3, 100);
+//                     // 逻辑：ESP32 收到后会返回 AA 01 [time] 55，你可以单独在中断或此任务轮询解析
+//                     break;
+
+//                 case CMD_GET_FILE_LIST:
+//                     log_printf("[Comm] Getting File List...\r\n");
+//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x20, 0x55}, 3, 100);
+//                     break;
+
+//                 case CMD_DOWNLOAD_FILE:
+//                     log_printf("[Comm] Downloading: %s\r\n", msg.filename);
+                    
+//                     // A. 先告诉 ESP32 我要哪个文件: AA 22 [name] 55
+//                     send_file_select_command(msg.filename);
+//                     vTaskDelay(pdMS_TO_TICKS(50)); // 给 ESP32 一点准备时间
+
+//                     // B. 发送启动 YModem 指令: AA 11 55
+//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x11, 0x55}, 3, 100);
+
+//                     // C. 进入 YModem 逻辑
+//                     // 此时任务会进入 ymodem_receive_file_with_callback 内部的死循环，直到传输完成
+//                     if (ymodem_wait_receive_header(&g_file_info, 10)) {
+                        
+//                         // 使用 YModem 解析出的文件名在 LittleFS 中创建文件
+//                         int err = lfs_file_open(lfs, &lfs_file, g_file_info.filename, 
+//                                               LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC);
+//                         if (err >= 0) {
+//                             ymodem_send_response(YMODEM_C);
+                            
+//                             // 传入 lfs_file 指针作为 user_data
+//                             ymodem_result_t res = ymodem_receive_file_with_callback(
+//                                                     &g_file_info, 
+//                                                     packet_callback_to_lfs, 
+//                                                     &lfs_file);
+                            
+//                             if (res == YMODEM_OK) log_printf("[Comm] %s Save Success!\r\n", g_file_info.filename);
+//                             else log_printf("[Comm] Transfer Error: %d\r\n", res);
+                            
+//                             lfs_file_close(lfs, &lfs_file);
+//                         } else {
+//                             log_printf("[Comm] LFS Open Failed: %d\r\n", err);
+//                         }
+//                     } else {
+//                         log_printf("[Comm] YModem Timeout/No Header\r\n");
+//                     }
+//                     break;
+
+//                 default:
+//                     break;
+//             }
+//         }
+//     }
+// }
