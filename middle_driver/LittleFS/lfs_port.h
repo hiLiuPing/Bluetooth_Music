@@ -4,17 +4,27 @@
 #include "lfs.h"
 #include "spi_flash.h"
 
-
+/* ================= 不使用malloc ================= */
 #define LFS_NO_MALLOC
 
+/* ================= Flash分区（关键） ================= */
+#define FLASH_TOTAL_SIZE     (32 * 1024 * 1024)
 
-/* ================= LittleFS 优化配置 ================= */
-#define LFS_READ_SIZE        16      // 最小读取粒度，16字节合适
-#define LFS_PROG_SIZE        256     // 必须等于 Flash Page Size (256)
-#define LFS_BLOCK_SIZE       4096    // 必须等于 Flash Sector Size (4KB)
-#define LFS_CACHE_SIZE       256     // 缓存大小，建议与 Page Size 一致以优化写性能
-#define LFS_LOOKAHEAD_SIZE   32      // W25Q256 块较多，建议增加到 32 或 64
-#define LFS_BLOCK_COUNT      8192    // 满额支持 32MB
+#define BOOT_SIZE            (1 * 1024 * 1024)
+
+/* ⭐ FS起始地址（关键修复点） */
+#define LFS_FLASH_OFFSET     (BOOT_SIZE)
+
+/* ================= LittleFS配置 ================= */
+#define LFS_READ_SIZE        16
+#define LFS_PROG_SIZE        256
+#define LFS_BLOCK_SIZE       4096
+
+#define LFS_CACHE_SIZE       256
+#define LFS_LOOKAHEAD_SIZE   32
+
+/* ⭐ 修正：只给FS区域 */
+#define LFS_BLOCK_COUNT   ((FLASH_TOTAL_SIZE - LFS_FLASH_OFFSET) / LFS_BLOCK_SIZE)
 
 /* ================= 全局 ================= */
 extern lfs_t g_lfs;

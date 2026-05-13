@@ -11,6 +11,14 @@ static uint8_t read_buf[LFS_CACHE_SIZE];
 static uint8_t prog_buf[LFS_CACHE_SIZE];
 static uint8_t lookahead_buf[LFS_LOOKAHEAD_SIZE];
 
+/* =========================================================
+ * ⭐ 关键：统一地址映射（修复核心）
+ * ========================================================= */
+static inline uint32_t lfs_to_flash_addr(lfs_block_t block, lfs_off_t off)
+{
+    return LFS_FLASH_OFFSET + block * LFS_BLOCK_SIZE + off;
+}
+
 /* ================= READ ================= */
 int lfs_read_cb(const struct lfs_config *c,
                 lfs_block_t block,
@@ -20,7 +28,7 @@ int lfs_read_cb(const struct lfs_config *c,
 {
     spi_flash_t *flash = (spi_flash_t *)c->context;
 
-    uint32_t addr = block * c->block_size + off;
+    uint32_t addr = lfs_to_flash_addr(block, off);
 
     return spi_flash_read(flash, addr, buffer, size);
 }
@@ -34,7 +42,7 @@ int lfs_prog_cb(const struct lfs_config *c,
 {
     spi_flash_t *flash = (spi_flash_t *)c->context;
 
-    uint32_t addr = block * c->block_size + off;
+    uint32_t addr = lfs_to_flash_addr(block, off);
 
     return spi_flash_write(flash, addr, buffer, size);
 }
@@ -45,9 +53,9 @@ int lfs_erase_cb(const struct lfs_config *c,
 {
     spi_flash_t *flash = (spi_flash_t *)c->context;
 
-    uint32_t addr = block * c->block_size;
+    uint32_t addr = LFS_FLASH_OFFSET + block * LFS_BLOCK_SIZE;
 
-    return spi_flash_erase(flash, addr, c->block_size);
+    return spi_flash_erase(flash, addr, LFS_BLOCK_SIZE);
 }
 
 /* ================= SYNC ================= */
@@ -55,7 +63,6 @@ int lfs_sync_cb(const struct lfs_config *c)
 {
     spi_flash_t *flash = (spi_flash_t *)c->context;
 
-    /* ✔ 这里只能调用，不能实现 */
     return spi_flash_sync(flash);
 }
 
@@ -90,11 +97,20 @@ int lfs_port_init(spi_flash_t *flash)
     {
         log_printf("[LFS] format...\r\n");
         lfs_format(&g_lfs, &g_cfg);
-        return lfs_mount(&g_lfs, &g_cfg);
+
+        ret = lfs_mount(&g_lfs, &g_cfg);
     }
 
-    log_printf("[LFS] mount OK\r\n");
-    return 0;
+    if (ret == 0)
+    {
+        log_printf("[LFS] mount OK\r\n");
+    }
+    else
+    {
+        log_printf("[LFS] mount FAIL\r\n");
+    }
+
+    return ret;
 }
 
 /* ================= handle ================= */
