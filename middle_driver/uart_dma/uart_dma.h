@@ -1,0 +1,33 @@
+#ifndef __UART_DMA_H__
+#define __UART_DMA_H__
+
+#include "main.h"
+#include "lwrb.h"
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define UART_DMA_RX_SIZE      256
+#define UART_LWRB_SIZE        4096
+
+extern UART_HandleTypeDef huart3;
+
+void uart_dma_init(void);
+
+void uart_dma_rx_check(void);
+
+int uart_dma_read(uint8_t *data,
+                  uint32_t len,
+                  uint32_t timeout);
+
+int uart_dma_write(const uint8_t *data,
+                   uint32_t len,
+                   uint32_t timeout);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

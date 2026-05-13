@@ -30,13 +30,15 @@
 
 #define FLASH_SR_BUSY            0x01
 
+
 /* ================= timing ================= */
+
 typedef enum {
     FLASH_T_PAGE = 0,
     FLASH_T_SECTOR,
+    FLASH_T_BLOCK,  // 新增
     FLASH_T_CHIP
 } flash_wait_type_t;
-
 typedef enum
 {
     FLASH_TYPE_SPI = 0,
@@ -84,4 +86,6 @@ int spi_flash_chip_erase(spi_flash_t *f);
 
 uint32_t spi_flash_read_id(spi_flash_t *f);
 int spi_flash_sync(spi_flash_t *f);
+
+// int flash_boot_write(uint32_t addr, uint8_t *buf, uint32_t len);
 #endif

@@ -221,25 +221,6 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/**
-  * @brief  I2C 总线扫描所有设备地址（0~127）
-  * @retval 无，通过串口打印所有在线设备的 7位I2C地址
-  */
-//void I2C_ScanDevices(void)
-//{
-
-//    log_printf("I2C Scanning...\r\n");
-
-//    for (uint8_t addr = 1; addr < 128; addr++)
-//    {
-//        if (HAL_I2C_IsDeviceReady(&hi2c1, (addr << 1), 2, 10) == HAL_OK)
-//        {
-//            log_printf("Found device at 0x%02X\r\n", addr);
-//        }
-//    }
-
-//    log_printf("Scan finished.\r\n");
-//}
 
 /* USER CODE END 4 */
 

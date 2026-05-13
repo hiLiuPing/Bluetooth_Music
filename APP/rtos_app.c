@@ -23,7 +23,7 @@
 
 // // #include "sfud.h"
 // // #include "spi.h" // 如果 spi 句柄定义在这里
-// #include "spi_flash.h"
+#include "spi_flash.h"
 // // #include "gc9d01.h"
 // #include "lfs_port.h"
 // 按键扫描任务
@@ -78,7 +78,7 @@ TaskHandle_t oled_Task_Handle;
 void vTransmit_Task(void *pvParameters);     
 #define Transmit_Task_PRIORITY   (tskIDLE_PRIORITY + 2)
 #define Transmit_Task_STACK_SIZE 1024
-#define Transmit_Task_PERIOD_MS  20
+#define Transmit_Task_PERIOD_MS  1000
 TaskHandle_t Transmit_Task_Handle;
 
 
@@ -352,6 +352,17 @@ UserMonitor_Init(); // 初始化监控系统和定时器
         log_printf("OLED task create FAIL\r\n");
     }
 
+    // 创建任务
+    ret = xTaskCreate((TaskFunction_t)vTransmit_Task,
+                      "My_Transmit_Task",
+                      Transmit_Task_STACK_SIZE,
+                      NULL,
+                      Transmit_Task_PRIORITY,
+                      &Transmit_Task_Handle);
+    if (ret != pdPASS) {
+        log_printf("Transmit task create FAIL\r\n");
+    }
+
 }
 
 
@@ -359,7 +370,8 @@ void vMusic_Task(void *pvParameters)
 {
     MusicCtrlCmd cmd;
     music_app_init();
-    Music_PowerOn();    // 开机  
+    // 测试的时候不开机
+    // Music_PowerOn();    // 开机  
      vTaskDelay(pdMS_TO_TICKS(50)); // 等待设备稳定
     while (1)
     {
@@ -481,6 +493,73 @@ static void LED_Update(void)
                            OLED_UI_SetPage(UI_PAGE_PLAY);                      
     }
 }
+
+spi_flash_t flash_32mb = {0};
+
+#define TEST_FILE_NAME    "hello.txt"
+#define TEST_CONTENT      "1234567890"
+
+void vTransmit_Task(void *pvParameters)
+{
+    /* 1. 硬件与文件系统初始化 */
+    if (spi_flash_init(&flash_32mb, &hspi2, SPI2_CS_GPIO_Port, SPI2_CS_Pin) != 0) {
+        log_printf("Flash Hardware Init Failed!\r\n");
+        vTaskDelete(NULL);
+        return;
+    }
+    lfs_port_init(&flash_32mb);
+    lfs_t *lfs = lfs_port_get();
+    lfs_file_t file;
+
+    log_printf("--- LittleFS Simple Test Start ---\r\n");
+
+    /* 2. 准备测试数据（写文件） */
+    int err = lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_CREAT | LFS_O_RDWR | LFS_O_TRUNC);
+    if (err >= 0) {
+        lfs_file_write(lfs, &file, TEST_CONTENT, strlen(TEST_CONTENT));
+        lfs_file_sync(lfs, &file);
+        lfs_file_close(lfs, &file);
+        log_printf("Write Done: %s\r\n", TEST_CONTENT);
+    }
+
+    /* 3. 循环：列出文件 + 读取内容 */
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    static char read_buf[32];
+
+    for (;;)
+    {
+        log_printf("\r\n--- Storage Status ---\r\n");
+
+        /* A. 打印文件列表 (ls 功能) */
+        lfs_dir_t dir;
+        struct lfs_info info;
+        if (lfs_dir_open(lfs, &dir, "/") >= 0) {
+            log_printf("Files in root:\r\n");
+            while (lfs_dir_read(lfs, &dir, &info) > 0) {
+                // 过滤掉 '.' 和 '..' 目录
+                if (info.name[0] == '.') continue; 
+                log_printf("  - %s \t size: %ld bytes\r\n", info.name, info.size);
+            }
+            lfs_dir_close(lfs, &dir);
+        }
+
+        /* B. 读取文件内容验证 */
+        if (lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_RDONLY) >= 0) {
+            memset(read_buf, 0, sizeof(read_buf));
+            int rd = lfs_file_read(lfs, &file, read_buf, sizeof(read_buf) - 1);
+            if (rd > 0) {
+                log_printf("[DATA] Content: %s\r\n", read_buf);
+            }
+            lfs_file_close(lfs, &file);
+        }
+
+        // 每 3 秒刷新一次
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(3000));
+    }
+}
+
+
+
 
 // void vTransmit_Task(void *pvParameters) {
 //     comm_msg_t msg;

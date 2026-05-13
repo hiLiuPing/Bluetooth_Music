@@ -113,6 +113,8 @@ targets:
         - middle_driver/ST7789
         - middle_driver/u8g2
         - middle_driver/ymodem
+        - middle_driver/uart_dma
+        - middle_driver/spi_flash
       libList: []
     excludeList: []
     settings: {}

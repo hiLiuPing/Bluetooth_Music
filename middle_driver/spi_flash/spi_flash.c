@@ -2,6 +2,8 @@
 #include <string.h>
 #include "log.h"
 
+#define FLASH_USE_FREERTOS 1
+
 /* ================= OS abstraction ================= */
 #if FLASH_USE_FREERTOS
 
@@ -120,22 +122,45 @@ static int flash_wait_ready(spi_flash_t *f, flash_wait_type_t type)
     {
         case FLASH_T_PAGE:   timeout = 10; break;
         case FLASH_T_SECTOR: timeout = 500; break;
+        case FLASH_T_BLOCK:  timeout = 4000; break;
         case FLASH_T_CHIP:   timeout = 20000; break;
         default: timeout = 1000; break;
     }
 
     uint32_t start = FLASH_TICK();
+    uint32_t retry = 0;
 
     while (1)
     {
-        if (!(flash_rdsr(f) & FLASH_SR_BUSY))
+        uint8_t sr = flash_rdsr(f);
+
+        /* ================= 关键修复1：非法值直接判失败 ================= */
+        if (sr == 0xFF)
+        {
+            retry++;
+            if (retry > 100)
+            {
+                log_printf("[FLASH] SR invalid 0xFF\r\n");
+                return -2;
+            }
+            continue;
+        }
+
+        /* ================= BUSY清除 ================= */
+        if (!(sr & FLASH_SR_BUSY))
+        {
             return 0;
+        }
 
         FLASH_DELAY(1);
 
+        /* ================= timeout ================= */
         if (FLASH_TICK() - start > timeout)
         {
+            log_printf("[FLASH] wait timeout SR=0x%02X\r\n", sr);
+
             flash_reset(f);
+
             return -1;
         }
     }
@@ -243,9 +268,10 @@ int spi_flash_read(spi_flash_t *f, uint32_t addr, uint8_t *buf, uint32_t len)
     pack_addr(f, addr, a);
     HAL_SPI_Transmit(f->hspi, a, f->addr_len, HAL_MAX_DELAY);
 
+    /* ================= FIX: 标准 Fast Read dummy ================= */
     if (cmd == FLASH_CMD_FAST_READ)
     {
-        uint8_t dummy = 0;
+        uint8_t dummy = 0x00;   // ✔ 固定1 byte dummy（安全标准写法）
         HAL_SPI_Transmit(f->hspi, &dummy, 1, HAL_MAX_DELAY);
     }
 
@@ -284,6 +310,9 @@ int spi_flash_write(spi_flash_t *f, uint32_t addr, const uint8_t *buf, uint32_t 
 
         cs_high(f);
 
+       
+
+
         flash_wait_ready(f, FLASH_T_PAGE);
 
         addr += chunk;
@@ -296,45 +325,54 @@ int spi_flash_write(spi_flash_t *f, uint32_t addr, const uint8_t *buf, uint32_t 
 }
 
 /* ================= erase ================= */
-int spi_flash_erase(spi_flash_t *f,
-                    uint32_t addr,
-                    uint32_t len)
+/**
+ * @brief 擦除指定范围的 Flash 空间
+ * @note  针对 LittleFS 优化：移除了自动对齐逻辑，改为严格对齐检查
+ * @return 0:成功, -1:参数超限, -2:对齐错误, -3:等待超时
+ */
+int spi_flash_erase(spi_flash_t *f, uint32_t addr, uint32_t len)
 {
     flash_lock(f);
 
-    /* ================= 防御 ================= */
-    if (len == 0)
-    {
+    // 1. 基础合法性检查
+    if (len == 0) {
         flash_unlock(f);
         return 0;
     }
 
-    if (addr + len > f->flash_size)
-    {
+    if (addr + len > f->flash_size) {
+        log_printf("[FLASH] Erase out of range: 0x%08X + %lu\r\n", addr, len);
         flash_unlock(f);
         return -1;
     }
 
-    while (len)
-    {
+    /* ================= 核心修改：严格对齐校验 ================= */
+    // W25Q256 最小物理擦除单位是 4096 字节 (Sector)
+    // 如果不对齐，说明上层逻辑（如 LittleFS 配置）有误，必须报错而不是偷偷对齐
+    if ((addr % 4096 != 0) || (len % 4096 != 0)) {
+        log_printf("[FLASH] Erase ALIGN ERROR! Addr: 0x%08X, Len: %lu\r\n", addr, len);
+        flash_unlock(f);
+        return -2; 
+    }
+
+    uint32_t end = addr + len;
+
+    while (addr < end) {
         flash_wren(f);
 
         cs_low(f);
 
         uint8_t cmd;
-        uint32_t step;
+        uint32_t erase_size;
 
-        /* ================= Block Erase 优化 ================= */
-        if (len >= f->block_size &&
-            (addr % f->block_size == 0))
-        {
-            cmd  = FLASH_CMD_BLOCK_ERASE;
-            step = f->block_size;
-        }
-        else
-        {
-            cmd  = FLASH_CMD_SECTOR_ERASE;
-            step = f->sector_size;
+        /* ================= 智能擦除策略 ================= */
+        // 如果当前地址 64KB 对齐，且剩余长度足够 64KB，优先使用 Block Erase 以提高速度
+        if ((addr % 65536 == 0) && (end - addr >= 65536)) {
+            cmd = FLASH_CMD_BLOCK_ERASE; // 0xD8
+            erase_size = 65536;
+        } else {
+            cmd = FLASH_CMD_SECTOR_ERASE; // 0x20
+            erase_size = 4096;
         }
 
         HAL_SPI_Transmit(f->hspi, &cmd, 1, HAL_MAX_DELAY);
@@ -345,14 +383,14 @@ int spi_flash_erase(spi_flash_t *f,
 
         cs_high(f);
 
-        flash_wait_ready(f,
-            (cmd == FLASH_CMD_BLOCK_ERASE) ? FLASH_T_SECTOR : FLASH_T_SECTOR);
+        /* ================= 关键修复：超时时间切换 ================= */
+        // Block Erase 的等待时间（通常 2-3s）远长于 Sector Erase（通常 400ms）
+        if (flash_wait_ready(f, (cmd == FLASH_CMD_BLOCK_ERASE) ? FLASH_T_BLOCK : FLASH_T_SECTOR) != 0) {
+            flash_unlock(f);
+            return -3;
+        }
 
-        /* ================= 安全递减（防下溢）================= */
-        uint32_t use = (len >= step) ? step : len;
-
-        addr += use;
-        len  -= use;
+        addr += erase_size;
     }
 
     flash_unlock(f);
@@ -391,3 +429,5 @@ uint32_t spi_flash_read_id(spi_flash_t *f)
 
     return (id[0]<<16)|(id[1]<<8)|id[2];
 }
+/* spi_flash.c */
+

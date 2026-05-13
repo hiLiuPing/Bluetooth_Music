@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #define LOG_ENABLE   1   // 日志总开关：0 关闭，1 打开
-#define LOG_AUTO_NEWLINE    1   // 自动换行
+#define LOG_AUTO_NEWLINE    0   // 自动换行
 #define LOG_PRINT_PREFIX    0   // 打印文件/行号
 
 /* 日志总开关：0 关闭，1 打开 */

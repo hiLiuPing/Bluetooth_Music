@@ -9,15 +9,23 @@
 /* Version */
 #define TRANSFER_VERSION "1.0.0"
 
+
+extern SPI_HandleTypeDef hspi1; // 假设你使用的是 hspi1，根据实际修改
+
+typedef struct {
+    uint32_t flash_addr;
+    uint32_t total_written;
+    uint32_t last_percent;
+} transfer_context_t;
+
+
 /* Flash config */
 
 
 /* UART config */
 #define TRANSFER_UART_TIMEOUT 1000
 
-// /* LED 控制 */
-// void transfer_led_toggle(void);
-// void transfer_led_set(bool state);
+
 
 /* 延时 */
 // void transfer_delay_ms(uint32_t ms);

@@ -181,11 +181,13 @@ void DMA1_Channel3_IRQHandler(void)
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-  if(__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE) != RESET)
-  {
-      __HAL_UART_CLEAR_IDLEFLAG(&huart3);   // 清除IDLE标志
-      UART_IdleHandler();                  // 处理DMA数据
-  }
+    // if (__HAL_UART_GET_FLAG(&huart3,
+    //                         UART_FLAG_IDLE))
+    // {
+    //     __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+
+    //     uart_dma_rx_check();
+    // }
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */

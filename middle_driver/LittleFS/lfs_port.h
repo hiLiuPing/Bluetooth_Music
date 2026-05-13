@@ -7,13 +7,14 @@
 
 #define LFS_NO_MALLOC
 
-/* ================= LittleFS 配置 ================= */
-#define LFS_READ_SIZE        16
-#define LFS_PROG_SIZE        256
-#define LFS_BLOCK_SIZE       4096
-#define LFS_CACHE_SIZE       256
-#define LFS_LOOKAHEAD_SIZE   16
-#define LFS_BLOCK_COUNT      1024
+
+/* ================= LittleFS 优化配置 ================= */
+#define LFS_READ_SIZE        16      // 最小读取粒度，16字节合适
+#define LFS_PROG_SIZE        256     // 必须等于 Flash Page Size (256)
+#define LFS_BLOCK_SIZE       4096    // 必须等于 Flash Sector Size (4KB)
+#define LFS_CACHE_SIZE       256     // 缓存大小，建议与 Page Size 一致以优化写性能
+#define LFS_LOOKAHEAD_SIZE   32      // W25Q256 块较多，建议增加到 32 或 64
+#define LFS_BLOCK_COUNT      8192    // 满额支持 32MB
 
 /* ================= 全局 ================= */
 extern lfs_t g_lfs;
