@@ -24,7 +24,7 @@
 // // #include "sfud.h"
 // // #include "spi.h" // 如果 spi 句柄定义在这里
 #include "spi_flash.h"
-// // #include "gc9d01.h"
+#include "uart_dma.h"
 // #include "lfs_port.h"
 // 按键扫描任务
 
@@ -494,71 +494,125 @@ static void LED_Update(void)
     }
 }
 
-spi_flash_t flash_32mb = {0};
+// spi_flash_t flash_32mb = {0};
 
-#define TEST_FILE_NAME    "hello.txt"
-#define TEST_CONTENT      "1234567890"
+// #define TEST_FILE_NAME    "hello.txt"
+// #define TEST_CONTENT      "1234567890"
+
+// void vTransmit_Task(void *pvParameters)
+// {
+//     /* 1. 硬件与文件系统初始化 */
+//     if (spi_flash_init(&flash_32mb, &hspi2, SPI2_CS_GPIO_Port, SPI2_CS_Pin) != 0) {
+//         log_printf("Flash Hardware Init Failed!\r\n");
+//         vTaskDelete(NULL);
+//         return;
+//     }
+//     lfs_port_init(&flash_32mb);
+//     lfs_t *lfs = lfs_port_get();
+//     lfs_file_t file;
+
+//     log_printf("--- LittleFS Simple Test Start ---\r\n");
+
+//     /* 2. 准备测试数据（写文件） */
+//     int err = lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_CREAT | LFS_O_RDWR | LFS_O_TRUNC);
+//     if (err >= 0) {
+//         lfs_file_write(lfs, &file, TEST_CONTENT, strlen(TEST_CONTENT));
+//         lfs_file_sync(lfs, &file);
+//         lfs_file_close(lfs, &file);
+//         log_printf("Write Done: %s\r\n", TEST_CONTENT);
+//     }
+
+//     /* 3. 循环：列出文件 + 读取内容 */
+//     TickType_t xLastWakeTime = xTaskGetTickCount();
+//     static char read_buf[32];
+
+//     for (;;)
+//     {
+//         log_printf("\r\n--- Storage Status ---\r\n");
+
+//         /* A. 打印文件列表 (ls 功能) */
+//         lfs_dir_t dir;
+//         struct lfs_info info;
+//         if (lfs_dir_open(lfs, &dir, "/") >= 0) {
+//             log_printf("Files in root:\r\n");
+//             while (lfs_dir_read(lfs, &dir, &info) > 0) {
+//                 // 过滤掉 '.' 和 '..' 目录
+//                 if (info.name[0] == '.') continue; 
+//                 log_printf("  - %s \t size: %ld bytes\r\n", info.name, info.size);
+//             }
+//             lfs_dir_close(lfs, &dir);
+//         }
+
+//         /* B. 读取文件内容验证 */
+//         if (lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_RDONLY) >= 0) {
+//             memset(read_buf, 0, sizeof(read_buf));
+//             int rd = lfs_file_read(lfs, &file, read_buf, sizeof(read_buf) - 1);
+//             if (rd > 0) {
+//                 log_printf("[DATA] Content: %s\r\n", read_buf);
+//             }
+//             lfs_file_close(lfs, &file);
+//         }
+
+//         // 每 3 秒刷新一次
+//         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(3000));
+//     }
+// }
+
+#define TEST_BUF_SIZE  4096       // 验证 4KB 数据
+uint8_t test_buffer[TEST_BUF_SIZE]; // 静态大数组
+uint32_t test_index = 0;           // 当前写入的位置
+uint8_t is_test_full = 0;          // 完成标志
 
 void vTransmit_Task(void *pvParameters)
 {
-    /* 1. 硬件与文件系统初始化 */
-    if (spi_flash_init(&flash_32mb, &hspi2, SPI2_CS_GPIO_Port, SPI2_CS_Pin) != 0) {
-        log_printf("Flash Hardware Init Failed!\r\n");
-        vTaskDelete(NULL);
-        return;
-    }
-    lfs_port_init(&flash_32mb);
-    lfs_t *lfs = lfs_port_get();
-    lfs_file_t file;
+    uint8_t temp_buf[128]; // 从 LwRB 读取时的临时小缓冲
+    int bytes_read;
 
-    log_printf("--- LittleFS Simple Test Start ---\r\n");
+    uart_dma_init();
+    log_printf("Ready! Please send a file (exactly %d bytes)...\r\n", TEST_BUF_SIZE);
 
-    /* 2. 准备测试数据（写文件） */
-    int err = lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_CREAT | LFS_O_RDWR | LFS_O_TRUNC);
-    if (err >= 0) {
-        lfs_file_write(lfs, &file, TEST_CONTENT, strlen(TEST_CONTENT));
-        lfs_file_sync(lfs, &file);
-        lfs_file_close(lfs, &file);
-        log_printf("Write Done: %s\r\n", TEST_CONTENT);
-    }
-
-    /* 3. 循环：列出文件 + 读取内容 */
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    static char read_buf[32];
-
-    for (;;)
+    while (1)
     {
-        log_printf("\r\n--- Storage Status ---\r\n");
-
-        /* A. 打印文件列表 (ls 功能) */
-        lfs_dir_t dir;
-        struct lfs_info info;
-        if (lfs_dir_open(lfs, &dir, "/") >= 0) {
-            log_printf("Files in root:\r\n");
-            while (lfs_dir_read(lfs, &dir, &info) > 0) {
-                // 过滤掉 '.' 和 '..' 目录
-                if (info.name[0] == '.') continue; 
-                log_printf("  - %s \t size: %ld bytes\r\n", info.name, info.size);
+        // 等待信号量或任务通知
+        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+        {
+            // 只要 LwRB 有数据就持续读取
+            while ((bytes_read = uart_dma_read(temp_buf, sizeof(temp_buf), 0)) > 0)
+            {
+                if (is_test_full == 0)
+                {
+                    for (int i = 0; i < bytes_read; i++)
+                    {
+                        if (test_index < TEST_BUF_SIZE)
+                        {
+                            test_buffer[test_index++] = temp_buf[i];
+                        }
+                        else
+                        {
+                            is_test_full = 1; // 填满了
+                            break;
+                        }
+                    }
+                }
             }
-            lfs_dir_close(lfs, &dir);
-        }
 
-        /* B. 读取文件内容验证 */
-        if (lfs_file_open(lfs, &file, TEST_FILE_NAME, LFS_O_RDONLY) >= 0) {
-            memset(read_buf, 0, sizeof(read_buf));
-            int rd = lfs_file_read(lfs, &file, read_buf, sizeof(read_buf) - 1);
-            if (rd > 0) {
-                log_printf("[DATA] Content: %s\r\n", read_buf);
+            // 当数组填满后，一次性打印出来
+            if (is_test_full == 1)
+            {
+                log_printf("\r\n--- TEST DATA START ---\r\n");
+                for (uint32_t i = 0; i < TEST_BUF_SIZE; i++)
+                {
+                    // 打印十六进制格式，每 32 字节换一行
+                    log_printf("%02X ", test_buffer[i]);
+                    if ((i + 1) % 32 == 0) log_printf("\r\n");
+                }
+                log_printf("\r\n--- TEST DATA END (Total: %d) ---\r\n", TEST_BUF_SIZE);
+                
+                is_test_full = 2; // 标记已打印完，不再处理
             }
-            lfs_file_close(lfs, &file);
         }
-
-        // 每 3 秒刷新一次
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(3000));
     }
 }
-
-
 
 
 // void vTransmit_Task(void *pvParameters) {
