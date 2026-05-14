@@ -9,10 +9,16 @@
 extern "C" {
 #endif
 
-#define UART_DMA_RX_SIZE      256
+#define UART_DMA_RX_SIZE      1024
 #define UART_LWRB_SIZE        4096
 
 extern UART_HandleTypeDef huart3;
+
+extern  lwrb_t uart_rb;
+
+ extern uint8_t dma_rx_buf[UART_DMA_RX_SIZE];
+
+ extern uint8_t lwrb_buf[UART_LWRB_SIZE];
 
 void uart_dma_init(void);
 

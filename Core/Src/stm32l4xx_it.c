@@ -22,6 +22,12 @@
 #include "stm32l4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "FreeRTOS.h"    // 解决 BaseType_t, pdFALSE 等定义问题
+#include "task.h"        // 解决 TaskHandle_t, vTaskNotifyGiveFromISR 等问题
+#include "uart_dma.h"    // 解决 uart_dma_rx_check, UART_DMA_RX_SIZE 等问题
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -212,3 +218,21 @@ void TIM6_DAC_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
+extern TaskHandle_t Transmit_Task_Handle;
+
+/**
+  * @brief  接收事件回调（当 DMA 缓冲区满或发生空闲中断时触发）
+  */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+    if (huart->Instance == USART3)
+    {
+        /* 1. 仅仅提取数据，不要重启 DMA */
+        uart_dma_rx_check(); 
+
+        /* 2. 唤醒任务 */
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        vTaskNotifyGiveFromISR(Transmit_Task_Handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}

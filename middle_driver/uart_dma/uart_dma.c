@@ -1,12 +1,12 @@
 #include "uart_dma.h"
 
-static uint8_t dma_rx_buf[UART_DMA_RX_SIZE];
+ uint8_t dma_rx_buf[UART_DMA_RX_SIZE];
 
-static uint8_t lwrb_buf[UART_LWRB_SIZE];
+ uint8_t lwrb_buf[UART_LWRB_SIZE];
 
-static lwrb_t uart_rb;
+ lwrb_t uart_rb;
 
-static volatile uint32_t old_pos = 0;
+ volatile uint32_t old_pos = 0;
 
 /* ================= 初始化 ================= */
 

@@ -1,10 +1,13 @@
 #include "file_transfer.h"
 #include <string.h>
 #include "log.h"
-#include "spi_flash.h"
+
+// #include "spi_flash.h"
 #include "spi.h" // 确保能用到 hspi1 等句柄
 /* 定义 Flash 设备句柄 */
-static spi_flash_t flash_dev; 
+
+spi_flash_t flash_32mb = {0}; 
+// lfs_file_t file; 
 /* ================= 初始化 ================= */
 void transfer_init(void)
 {
@@ -15,13 +18,16 @@ void transfer_init(void)
 
     /* 3. 初始化 Flash 硬件接口 */
     // 请根据你的实际硬件连接修改 GPIOA 和 GPIO_PIN_4
-    int status = spi_flash_init(&flash_dev, &hspi1, GPIOA, GPIO_PIN_4);
-    
-    if (status == 0) {
-        log_printf("Flash Init Success! Size: %lu MB", flash_dev.flash_size / 1024 / 1024);
-    } else {
-        log_printf("Flash Init Failed! Error: %d", status);
+
+   
+       if (spi_flash_init(&flash_32mb, &hspi2, SPI2_CS_GPIO_Port, SPI2_CS_Pin) != 0) {
+        log_printf("Flash Hardware Init Failed!\r\n");
+        // vTaskDelete(NULL);
+        return;
     }
+    lfs_port_init(&flash_32mb);
+    // lfs_t *lfs = lfs_port_get();
+
 }
 
 ymodem_file_info_t g_file_info; // 现在 ymodem.h 已定义此类型
@@ -70,7 +76,7 @@ log_printf("File size: %lu bytes. Erasing Flash...", g_file_info.file_size);
      * 2. 中间对齐的部分自动用 Block Erase (64KB) 提速
      * 3. 尾部不满 64KB 的部分用 Sector Erase
      */
-    if (spi_flash_erase(&flash_dev, 0, g_file_info.file_size) != 0) {
+    if (spi_flash_erase(&flash_32mb, 0, g_file_info.file_size) != 0) {
         log_printf("Flash Erase Failed!");
         return -3;
     }

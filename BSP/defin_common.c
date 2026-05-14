@@ -1,7 +1,7 @@
 #include "defin_common.h"
 
 // 定义全局状态变量（可选，用于记录当前应用状态）
-app_run_state_t g_app_current_state = MUSIC_ON;
+app_run_state_t g_app_current_state = DISPLAY_ON;
 
 
 void LPF_Init(LPF_t *f, float alpha)

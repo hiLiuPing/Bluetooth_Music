@@ -74,7 +74,7 @@ void vOLED_Task(void *pvParameters);
 TaskHandle_t oled_Task_Handle;
 
 //Transmit任务队列
-
+QueueHandle_t CommQueue;
 void vTransmit_Task(void *pvParameters);     
 #define Transmit_Task_PRIORITY   (tskIDLE_PRIORITY + 2)
 #define Transmit_Task_STACK_SIZE 1024
@@ -114,7 +114,7 @@ void vKey_Manllege_Task(void *pvParameters)
     ButtonCommand_t keycmd;
     BaseType_t xStatus;
 
-    // music_app_init();   // 音乐模块初始化
+
 
     while (1)
     {
@@ -277,9 +277,65 @@ void vKey_Manllege_Task(void *pvParameters)
 
                 /* ================= DISPLAY模式（预留） ================= */
                 case DISPLAY_ON:
-                    log_printf("DISPLAY_ON Button %d, event %d", keycmd.id, keycmd.event);
-                    break;
+                  switch(keycmd.id)
+                    {
+                        case 0: // 上键
+                            if(keycmd.event == BTN_SINGLE_CLICK)
+                            {
 
+                                log_printf("CMD_PREV Button %d, event %d", keycmd.id, keycmd.event);
+
+                            }
+                            else if(keycmd.event == BTN_DOUBLE_CLICK)
+                            {
+
+                                log_printf("CMD_VOL_DOWN Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            else if(keycmd.event == BTN_LONG_PRESS_START)
+                            {
+                                log_printf("MUSIC_ON Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            break;
+
+                        case 1: // 中键（播放/暂停）
+                            if(keycmd.event == BTN_SINGLE_CLICK)
+                            {
+
+                                log_printf("CMD_PLAY_STOP Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            else if(keycmd.event == BTN_DOUBLE_CLICK)
+                            {
+
+                                log_printf("UI_EVT_BATTERY_CHARGING Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            else if(keycmd.event == BTN_LONG_PRESS_START)
+                            {
+                                log_printf("Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            break;
+
+                        case 2: // 下键（下一曲 / 音量+）
+                            if(keycmd.event == BTN_SINGLE_CLICK)
+                            {
+
+                                log_printf("CMD_NEXT Button %d, event %d", keycmd.id, keycmd.event);
+
+                            }
+                            else if(keycmd.event == BTN_DOUBLE_CLICK)
+                            {
+       
+                                log_printf("CMD_VOL_UP Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            else if(keycmd.event == BTN_LONG_PRESS_START)
+                            {
+                                log_printf("MUSIC_ON Button %d, event %d", keycmd.id, keycmd.event);
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     g_app_current_state = MUSIC_ON; // 异常恢复
                     break;
@@ -558,127 +614,140 @@ static void LED_Update(void)
 //     }
 // }
 
-#define TEST_BUF_SIZE  4096       // 验证 4KB 数据
-uint8_t test_buffer[TEST_BUF_SIZE]; // 静态大数组
-uint32_t test_index = 0;           // 当前写入的位置
-uint8_t is_test_full = 0;          // 完成标志
+// #define TEST_BUF_SIZE  4096       // 验证 4KB 数据
+// uint8_t test_buffer[TEST_BUF_SIZE]; // 静态大数组
+// uint32_t test_index = 0;           // 当前写入的位置
+// uint8_t is_test_full = 0;          // 完成标志
 
-void vTransmit_Task(void *pvParameters)
-{
-    uint8_t temp_buf[128]; // 从 LwRB 读取时的临时小缓冲
-    int bytes_read;
+// void vTransmit_Task(void *pvParameters)
+// {
+//     uint8_t temp_buf[128]; // 从 LwRB 读取时的临时小缓冲
+//     int bytes_read;
 
-    uart_dma_init();
-    log_printf("Ready! Please send a file (exactly %d bytes)...\r\n", TEST_BUF_SIZE);
+//     uart_dma_init();
+//     log_printf("Ready! Please send a file (exactly %d bytes)...\r\n", TEST_BUF_SIZE);
 
-    while (1)
-    {
-        // 等待信号量或任务通知
-        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
-        {
-            // 只要 LwRB 有数据就持续读取
-            while ((bytes_read = uart_dma_read(temp_buf, sizeof(temp_buf), 0)) > 0)
-            {
-                if (is_test_full == 0)
-                {
-                    for (int i = 0; i < bytes_read; i++)
-                    {
-                        if (test_index < TEST_BUF_SIZE)
-                        {
-                            test_buffer[test_index++] = temp_buf[i];
-                        }
-                        else
-                        {
-                            is_test_full = 1; // 填满了
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // 当数组填满后，一次性打印出来
-            if (is_test_full == 1)
-            {
-                log_printf("\r\n--- TEST DATA START ---\r\n");
-                for (uint32_t i = 0; i < TEST_BUF_SIZE; i++)
-                {
-                    // 打印十六进制格式，每 32 字节换一行
-                    log_printf("%02X ", test_buffer[i]);
-                    if ((i + 1) % 32 == 0) log_printf("\r\n");
-                }
-                log_printf("\r\n--- TEST DATA END (Total: %d) ---\r\n", TEST_BUF_SIZE);
-                
-                is_test_full = 2; // 标记已打印完，不再处理
-            }
-        }
-    }
-}
-
-
-// void vTransmit_Task(void *pvParameters) {
-//     comm_msg_t msg;
-//     lfs_file_t lfs_file;
-//     lfs_t *lfs = lfs_port_get(); // 获取你 lfs_port.c 里的文件系统指针
-
-//     for (;;) {
-//         // 1. 等待队列指令 (原生 FreeRTOS 函数)
-//         if (xQueueReceive(CommQueueHandle, &msg, portMAX_DELAY) == pdPASS) {
-            
-//             switch (msg.type) {
-                
-//                 case CMD_SYNC_TIME:
-//                     log_printf("[Comm] Requesting Time...\r\n");
-//                     // 发送 AA 01 55 给 ESP32
-//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x01, 0x55}, 3, 100);
-//                     // 逻辑：ESP32 收到后会返回 AA 01 [time] 55，你可以单独在中断或此任务轮询解析
-//                     break;
-
-//                 case CMD_GET_FILE_LIST:
-//                     log_printf("[Comm] Getting File List...\r\n");
-//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x20, 0x55}, 3, 100);
-//                     break;
-
-//                 case CMD_DOWNLOAD_FILE:
-//                     log_printf("[Comm] Downloading: %s\r\n", msg.filename);
-                    
-//                     // A. 先告诉 ESP32 我要哪个文件: AA 22 [name] 55
-//                     send_file_select_command(msg.filename);
-//                     vTaskDelay(pdMS_TO_TICKS(50)); // 给 ESP32 一点准备时间
-
-//                     // B. 发送启动 YModem 指令: AA 11 55
-//                     HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x11, 0x55}, 3, 100);
-
-//                     // C. 进入 YModem 逻辑
-//                     // 此时任务会进入 ymodem_receive_file_with_callback 内部的死循环，直到传输完成
-//                     if (ymodem_wait_receive_header(&g_file_info, 10)) {
-                        
-//                         // 使用 YModem 解析出的文件名在 LittleFS 中创建文件
-//                         int err = lfs_file_open(lfs, &lfs_file, g_file_info.filename, 
-//                                               LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC);
-//                         if (err >= 0) {
-//                             ymodem_send_response(YMODEM_C);
-                            
-//                             // 传入 lfs_file 指针作为 user_data
-//                             ymodem_result_t res = ymodem_receive_file_with_callback(
-//                                                     &g_file_info, 
-//                                                     packet_callback_to_lfs, 
-//                                                     &lfs_file);
-                            
-//                             if (res == YMODEM_OK) log_printf("[Comm] %s Save Success!\r\n", g_file_info.filename);
-//                             else log_printf("[Comm] Transfer Error: %d\r\n", res);
-                            
-//                             lfs_file_close(lfs, &lfs_file);
-//                         } else {
-//                             log_printf("[Comm] LFS Open Failed: %d\r\n", err);
+//     while (1)
+//     {
+//         // 等待信号量或任务通知
+//         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+//         {
+//             // 只要 LwRB 有数据就持续读取
+//             while ((bytes_read = uart_dma_read(temp_buf, sizeof(temp_buf), 0)) > 0)
+//             {
+//                 if (is_test_full == 0)
+//                 {
+//                     for (int i = 0; i < bytes_read; i++)
+//                     {
+//                         if (test_index < TEST_BUF_SIZE)
+//                         {
+//                             test_buffer[test_index++] = temp_buf[i];
 //                         }
-//                     } else {
-//                         log_printf("[Comm] YModem Timeout/No Header\r\n");
+//                         else
+//                         {
+//                             is_test_full = 1; // 填满了
+//                             break;
+//                         }
 //                     }
-//                     break;
+//                 }
+//             }
 
-//                 default:
-//                     break;
+//             // 当数组填满后，一次性打印出来
+//             if (is_test_full == 1)
+//             {
+//                 log_printf("\r\n--- TEST DATA START ---\r\n");
+//                 for (uint32_t i = 0; i < TEST_BUF_SIZE; i++)
+//                 {
+//                     // 打印十六进制格式，每 32 字节换一行
+//                     log_printf("%02X ", test_buffer[i]);
+//                     if ((i + 1) % 32 == 0) log_printf("\r\n");
+//                 }
+//                 log_printf("\r\n--- TEST DATA END (Total: %d) ---\r\n", TEST_BUF_SIZE);
+                
+//                 is_test_full = 2; // 标记已打印完，不再处理
 //             }
 //         }
 //     }
 // }
+
+
+// 假设已经获取了 LittleFS 的指针
+extern lfs_t *lfs_port_get(void);
+
+void vTransmit_Task(void *pvParameters) 
+{
+    transfer_init();
+    comm_msg_t msg;
+    uint8_t rx_byte;
+    lfs_file_t lfs_file;
+    lfs_t *lfs = lfs_port_get();
+   CommQueue = xQueueCreate(16, sizeof(comm_msg_t));
+    log_printf("[Comm] Transmit Task Started...\r\n");
+
+    for (;;) 
+    {
+        /* 1. 等待队列指令，永久阻塞直到有任务想发送东西 */
+        if (xQueueReceive(CommQueue, &msg, portMAX_DELAY) == pdPASS) 
+        {
+            /* 每次发送指令前，清空 LwRB 环形缓冲区，防止之前的杂质数据干扰响应解析 */
+            lwrb_reset(&uart_rb);
+
+            switch (msg.type) 
+            {
+                /* -------------------------------------------
+                   测试指令 1：同步时间 (AA 01 55)
+                   ------------------------------------------- */
+                case CMD_SYNC_TIME:
+                    log_printf("[Comm] Sending Sync Time Command...\r\n");
+                    HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x01, 0x55}, 3, 100);
+                    
+                    // 等待响应示例：假设 ESP32 返回以 AA 开头的数据
+                    if (uart_dma_read(&rx_byte, 1, 1000) > 0) {
+                        if (rx_byte == 0xAA) {
+                            log_printf("[Comm] ESP32 Responded OK!\r\n");
+                        }
+                    } else {
+                        log_printf("[Comm] Sync Time Timeout!\r\n");
+                    }
+                    break;
+
+                /* -------------------------------------------
+                   测试指令 2：获取文件列表 (AA 20 55)
+                   ------------------------------------------- */
+                case CMD_GET_FILE_LIST:
+                    log_printf("[Comm] Requesting File List...\r\n");
+                    HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x20, 0x55}, 3, 100);
+                    
+                    // 这里可以接一个循环读取逻辑，把 ESP32 发回的文件名打印出来
+                    break;
+
+                /* -------------------------------------------
+                   测试指令 3：下载文件并保存到 LittleFS
+                   ------------------------------------------- */
+                case CMD_DOWNLOAD_FILE:
+                    log_printf("[Comm] Target File: %s\r\n", msg.filename);
+                    
+                    // A. 告诉 ESP32 选中该文件 (需根据你定义的协议发送文件名)
+                    // send_file_select_command(msg.filename); 
+                    
+                    vTaskDelay(pdMS_TO_TICKS(50)); // 稍作停顿
+
+                    // B. 发送启动 YModem 指令
+                    log_printf("[Comm] Starting YModem Transfer...\r\n");
+                    HAL_UART_Transmit(&huart3, (uint8_t[]){0xAA, 0x11, 0x55}, 3, 100);
+
+                    // C. YModem 逻辑
+                    // 1. 等待 YModem 帧头
+                    // if (ymodem_wait_receive_header(&g_file_info, 2000)) { ... }
+                    // 2. 接收并写入 LFS
+                    // ymodem_receive_file_with_callback(..., packet_callback_to_lfs, &lfs_file);
+                    
+                    log_printf("[Comm] YModem sequence finished.\r\n");
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+}
