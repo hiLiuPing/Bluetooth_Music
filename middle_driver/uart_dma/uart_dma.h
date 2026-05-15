@@ -12,7 +12,7 @@ extern "C" {
 #define UART_DMA_RX_SIZE      1024
 #define UART_LWRB_SIZE        4096
 
-extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart1;
 
 extern  lwrb_t uart_rb;
 

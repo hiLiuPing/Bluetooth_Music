@@ -26,7 +26,7 @@
 #include "FreeRTOS.h"    // 解决 BaseType_t, pdFALSE 等定义问题
 #include "task.h"        // 解决 TaskHandle_t, vTaskNotifyGiveFromISR 等问题
 #include "uart_dma.h"    // 解决 uart_dma_rx_check, UART_DMA_RX_SIZE 等问题
-
+// #include "gpio.h"
 
 /* USER CODE END Includes */
 
@@ -61,8 +61,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_usart3_rx;
-extern UART_HandleTypeDef huart3;
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
@@ -168,37 +168,39 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 channel3 global interrupt.
+  * @brief This function handles DMA1 channel5 global interrupt.
   */
-void DMA1_Channel3_IRQHandler(void)
+void DMA1_Channel5_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Channel3_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
 
-  /* USER CODE END DMA1_Channel3_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart3_rx);
-  /* USER CODE BEGIN DMA1_Channel3_IRQn 1 */
+  /* USER CODE END DMA1_Channel5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
 
-  /* USER CODE END DMA1_Channel3_IRQn 1 */
+  /* USER CODE END DMA1_Channel5_IRQn 1 */
 }
 
 /**
-  * @brief This function handles USART3 global interrupt.
+  * @brief This function handles USART1 global interrupt.
   */
-void USART3_IRQHandler(void)
+void USART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART3_IRQn 0 */
-    // if (__HAL_UART_GET_FLAG(&huart3,
-    //                         UART_FLAG_IDLE))
-    // {
-    //     __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+  /* USER CODE BEGIN USART1_IRQn 0 */
 
-    //     uart_dma_rx_check();
-    // }
-  /* USER CODE END USART3_IRQn 0 */
-  HAL_UART_IRQHandler(&huart3);
-  /* USER CODE BEGIN USART3_IRQn 1 */
+    if(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE))
+    {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-  /* USER CODE END USART3_IRQn 1 */
+        uart_dma_rx_check();   // 搬运DMA数据
+    }
+
+
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
+
+  /* USER CODE END USART1_IRQn 1 */
 }
 
 /**
@@ -218,21 +220,3 @@ void TIM6_DAC_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-extern TaskHandle_t Transmit_Task_Handle;
-
-/**
-  * @brief  接收事件回调（当 DMA 缓冲区满或发生空闲中断时触发）
-  */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-    if (huart->Instance == USART3)
-    {
-        /* 1. 仅仅提取数据，不要重启 DMA */
-        uart_dma_rx_check(); 
-
-        /* 2. 唤醒任务 */
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        vTaskNotifyGiveFromISR(Transmit_Task_Handle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}

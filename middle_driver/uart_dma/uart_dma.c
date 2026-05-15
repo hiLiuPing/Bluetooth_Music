@@ -16,12 +16,9 @@ void uart_dma_init(void)
               lwrb_buf,
               sizeof(lwrb_buf));
 
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart3,
-                                 dma_rx_buf,
-                                 UART_DMA_RX_SIZE);
+    HAL_UART_Receive_DMA(&huart1, dma_rx_buf, UART_DMA_RX_SIZE);
 
-    __HAL_DMA_DISABLE_IT(huart3.hdmarx,
-                         DMA_IT_HT);
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 }
 
 /* ================= DMA检查 ================= */
@@ -31,7 +28,7 @@ void uart_dma_rx_check(void)
     uint32_t pos;
 
     pos = UART_DMA_RX_SIZE -
-          __HAL_DMA_GET_COUNTER(huart3.hdmarx);
+          __HAL_DMA_GET_COUNTER(huart1.hdmarx);
 
     if (pos != old_pos)
     {
@@ -87,7 +84,7 @@ int uart_dma_write(const uint8_t *data,
                    uint32_t len,
                    uint32_t timeout)
 {
-    if (HAL_UART_Transmit(&huart3,
+    if (HAL_UART_Transmit(&huart1,
                           (uint8_t *)data,
                           len,
                           timeout) == HAL_OK)

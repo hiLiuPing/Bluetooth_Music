@@ -9,6 +9,20 @@
 /* Version */
 #define TRANSFER_VERSION "1.0.0"
 
+// esp32 相关协议定义
+#define FRAME_HEAD      0xAA
+#define FRAME_TAIL      0x55
+
+// #define CMD_GET_TIME        0x01
+// #define CMD_GET_NOW_DETAIL  0x02
+// #define CMD_GET_AIR_DETAIL  0x03
+// #define CMD_GET_FUTURE_7DAY 0x04
+// #define CMD_RESTART         0x05
+// #define CMD_OTA_START       0x11
+// #define CMD_FS_LIST         0x20
+// #define CMD_FS_SELECT       0x22
+
+
 
 extern SPI_HandleTypeDef hspi2; // 假设你使用的是 hspi2，根据实际修改
 extern spi_flash_t flash_32mb; // Flash 设备句柄
@@ -16,10 +30,14 @@ extern spi_flash_t flash_32mb; // Flash 设备句柄
 
 /* 指令类型枚举 */
 typedef enum {
-    CMD_SYNC_TIME,
-    CMD_GET_FILE_LIST,
-    CMD_DOWNLOAD_FILE,
-    // 可以继续添加...
+    CMD_GET_TIME        =   0x01,
+    CMD_GET_NOW_DETAIL  =   0x02,
+    CMD_GET_AIR_DETAIL  =   0x03,
+    CMD_GET_FUTURE_7DAY =   0x04,
+    CMD_RESTART         =   0x05,
+    CMD_OTA_START       =   0x11,
+    CMD_FS_LIST         =   0x20,
+    CMD_FS_SELECT       =   0x22
 } comm_cmd_t;
 
 /* 任务间通信的消息结构 */
