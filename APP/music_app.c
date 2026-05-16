@@ -5,21 +5,8 @@
 // MusicStatus_t g_music_status;
 
 // 命令队列
-QueueHandle_t music_cmd_queue;
-#define QUEUE_LEN    10
 
-// ===================== 初始化（队列 + 三种状态） =====================
-void music_app_init(void)
-{
-    // // ========== 1. 初始化三种状态（默认值） ==========
-    // g_music_status.conn  = CONN_DISCONNECTED;  // 未连接
-    // g_music_status.play  = PLAY_PAUSE;        // 暂停
-    // g_music_status.audio = AUDIO_NONE;        // 无音频
-
-    // ========== 2. 创建命令队列 ==========
-    music_cmd_queue = xQueueCreate(QUEUE_LEN, sizeof(MusicCtrlCmd));
-}
-
+extern QueueHandle_t music_cmd_queue;
 // ===================== 发送命令 =====================
 void music_send_cmd(MusicCtrlCmd cmd)
 {

@@ -11,7 +11,7 @@ Button VIRTUAL_AUDIO_STATE;
 
 
 /* 队列句柄 */
- QueueHandle_t buttonQueue;
+extern QueueHandle_t buttonQueue;
 
 /* ================= GPIO 读取函数 ================= */
 /* 注意：button_id 0 -> KEY1, 1 -> KEY2 */

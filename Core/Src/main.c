@@ -110,7 +110,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
- log_init(&huart3);
+ log_init(&huart2);
  
 log_printf("system start");
 // ST7789_Init();

@@ -184,7 +184,9 @@ void DMA1_Channel5_IRQHandler(void)
 /**
   * @brief This function handles USART1 global interrupt.
   */
-void USART1_IRQHandler(void)
+
+extern TaskHandle_t Transmit_Task_Handle; // 声明外部任务句柄
+  void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
 
@@ -194,8 +196,13 @@ void USART1_IRQHandler(void)
 
         uart_dma_rx_check();   // 搬运DMA数据
     }
-
-
+ HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin); // 触发LED闪烁，观察中断响应
+   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        if(Transmit_Task_Handle != NULL) {
+            vTaskNotifyGiveFromISR(Transmit_Task_Handle, &xHigherPriorityTaskWoken);
+        }
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */

@@ -18,7 +18,6 @@ extern Button VIRTUAL_BLE_STATE;
 extern Button VIRTUAL_AUDIO_STATE;
 /* 队列句柄 */
 
-extern  QueueHandle_t buttonQueue;
 
 
 

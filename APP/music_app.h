@@ -67,10 +67,10 @@ typedef enum
 
 // 全局变量
 // extern MusicStatus_t g_music_status;
-extern QueueHandle_t music_cmd_queue;
+// extern QueueHandle_t music_cmd_queue;
 
 // 函数
-void music_app_init(void);
+// void music_app_init(void);
 void music_send_cmd(MusicCtrlCmd cmd);
 // void Music_Ctrl_Init(void);
 
