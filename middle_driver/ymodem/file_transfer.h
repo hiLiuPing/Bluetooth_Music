@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "lfs_port.h"
+#include "uart_dma.h"
 /* Version */
 #define TRANSFER_VERSION "1.0.0"
 
@@ -13,20 +14,9 @@
 #define FRAME_HEAD      0xAA
 #define FRAME_TAIL      0x55
 
-// #define CMD_GET_TIME        0x01
-// #define CMD_GET_NOW_DETAIL  0x02
-// #define CMD_GET_AIR_DETAIL  0x03
-// #define CMD_GET_FUTURE_7DAY 0x04
-// #define CMD_RESTART         0x05
-// #define CMD_OTA_START       0x11
-// #define CMD_FS_LIST         0x20
-// #define CMD_FS_SELECT       0x22
-
-
-
 extern SPI_HandleTypeDef hspi2; // 假设你使用的是 hspi2，根据实际修改
 extern spi_flash_t flash_32mb; // Flash 设备句柄
-
+extern uart_dma_t uart1_admin; // 唯一实体的定义
 
 /* 指令类型枚举 */
 typedef enum {

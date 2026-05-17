@@ -186,6 +186,7 @@ void DMA1_Channel5_IRQHandler(void)
   */
 
 extern TaskHandle_t Transmit_Task_Handle; // 声明外部任务句柄
+extern uart_dma_t uart1_admin; // 唯一实体的定义
   void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
@@ -194,9 +195,9 @@ extern TaskHandle_t Transmit_Task_Handle; // 声明外部任务句柄
     {
         __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-        uart_dma_rx_check();   // 搬运DMA数据
+        uart_dma_rx_check(&uart1_admin);   // 搬运DMA数据
     }
- HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin); // 触发LED闪烁，观察中断响应
+//  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin); // 触发LED闪烁，观察中断响应
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         if(Transmit_Task_Handle != NULL) {
             vTaskNotifyGiveFromISR(Transmit_Task_Handle, &xHigherPriorityTaskWoken);

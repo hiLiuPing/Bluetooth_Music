@@ -959,6 +959,8 @@ case CMD_GET_FUTURE_7DAY:
     }
 }
 
+uint8_t u1_dma_buf[512];
+uint8_t u1_rb_buf[1024];
 void vTransmit_Task(void *pvParameters)
 {
     static ProtocolState_t state = STATE_IDLE;
@@ -971,15 +973,14 @@ void vTransmit_Task(void *pvParameters)
     transfer_init();
     lfs_t *lfs = lfs_port_get();
     uint8_t ch;
-    uart_dma_init();
-
+    uart_dma_init(&uart1_admin, &huart1, u1_dma_buf, 512, u1_rb_buf, 1024);
     for (;;)
     {
         // 等待串口空闲中断通知
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         // 从环形缓冲区逐字节解析
-        while (uart_dma_read(&ch, 1, 0) > 0)
+        while (uart_dma_read(&uart1_admin, &ch, 1, 0) > 0)
         {
             switch (state)
             {
