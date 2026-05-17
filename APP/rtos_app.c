@@ -322,7 +322,7 @@ void vKey_Manllege_Task(void *pvParameters)
                             xQueueSend(CommQueue_TX, &msgapp, 0);
                             log_printf("CMD_GET_FUTURE_7DAY send to CommQueue_TX\r\n");
                         }
-                        log_printf("UI_EVT_BATTERY_CHARGING Button %d, event %d", keycmd.id, keycmd.event);
+                        // log_printf("UI_EVT_BATTERY_CHARGING Button %d, event %d", keycmd.id, keycmd.event);
                     }
                     else if (keycmd.event == BTN_LONG_PRESS_START)
                     {
@@ -698,139 +698,51 @@ static void LED_Update(void)
 //     }
 // }
 
-// void vTransmit_Task(void *pvParameters)
-// {
-//     uint8_t temp_buf[128];
 
-//     uint32_t total_rx = 0;
-//     uint32_t print_count = 0;
 
-//     int bytes_read;
-
-//     /* 初始化 */
-//     uart_dma_init();
-
-//     log_printf("UART DMA Ready!\r\n");
-
-//     while (1)
-//     {
-//         /* 读取 RingBuffer */
-//         while ((bytes_read = uart_dma_read(temp_buf,
-//                                            sizeof(temp_buf),
-//                                            0)) > 0)
-//         {
-//             total_rx += bytes_read;
-
-//             /* 每1000字节打印一次 */
-//             while (total_rx >= 1000)
-//             {
-//                 print_count++;
-
-//                 log_printf("RX 1000 Bytes OK [%lu]\r\n",
-//                            print_count);
-
-//                 total_rx -= 1000;
-//             }
-//         }
-
-//         /* 降低CPU占用 */
-//         vTaskDelay(pdMS_TO_TICKS(10));
-//     }
-// }
-// void vComm_Tx_Task(void *pvParameters)
-// {
-//     comm_msg_t msg;
-
-//     // 初始化队列（16个深度，足够 UI 或其他任务无脑投递）
-//     CommQueue_TX = xQueueCreate(16, sizeof(comm_msg_t));
-//     log_printf("[Comm Tx] Task Started...\r\n");
-
-//     for (;;)
-//     {
-//         // 死等队列消息
-//         if (xQueueReceive(CommQueue_TX, &msg, portMAX_DELAY) == pdPASS)
-//         {
-//             // 在发送涉及大流量返回的指令前，先检查 Rx 是不是还在忙上一次的任务
-//             EventBits_t bits = xEventGroupGetBits(xCommEventGroup);
-//             if ((bits & BIT_BUSY_MASK) != 0 && msg.type != CMD_RESTART) {
-//                 log_printf("[Comm Tx] Rx is busy, command %d dropped!\r\n", msg.type);
-//                 continue;
-//             }
-
-//             // 发送前，先清空一下接收缓冲区，保证接收环境干净
-//             lwrb_reset(&uart_rb);
-
-//             switch (msg.type)
-//             {
-//                 case CMD_GET_TIME:
-//                     log_printf("[Comm Tx] Requesting Time...\r\n");
-//                     HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_TIME, FRAME_TAIL}, 3, 100);
-//                     break;
-
-//                 case CMD_GET_NOW_DETAIL:
-//                     log_printf("[Comm Tx] Requesting Current Weather...\r\n");
-//                     HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_NOW_DETAIL, FRAME_TAIL}, 3, 100);
-//                     break;
-
-//                 case CMD_GET_FUTURE_7DAY:
-//                     log_printf("[Comm Tx] Requesting 7-Day Forecast...\r\n");
-//                     // 告诉 Rx：接下来注意听，我们要收 7 天天气了
-//                     xEventGroupSetBits(xCommEventGroup, BIT_EXPECT_WEATHER);
-//                     HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_FUTURE_7DAY, FRAME_TAIL}, 3, 100);
-//                     break;
-
-//                 case CMD_FS_LIST:
-//                     log_printf("[Comm Tx] Requesting File List...\r\n");
-//                     // 告诉 Rx：接下来的数据是文件列表
-//                     xEventGroupSetBits(xCommEventGroup, BIT_EXPECT_FS_LIST);
-//                     HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_FS_LIST, FRAME_TAIL}, 3, 100);
-//                     break;
-
-//                 case CMD_RESTART:
-//                     log_printf("[Comm Tx] Requesting ESP32 Restart...\r\n");
-//                     HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_RESTART, FRAME_TAIL}, 3, 100);
-//                     break;
-
-//                 default:
-//                     break;
-//             }
-//         }
-//     }
-// }
 void vUart_TX_Task(void *pvParameters)
 {
     comm_msg_t msg;
-    log_printf("UART TX Ready!\r\n");
+
 
     while (1)
     {
-        /* 清除 RingBuffer */
+     
                if (xQueueReceive(CommQueue_TX, &msg, portMAX_DELAY) == pdPASS)
         {
+            switch (msg.type)
+            {
+                case CMD_GET_TIME:
         HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_TIME, FRAME_TAIL}, 3, 100);
         log_printf("UART TX CMD_GET_TIME...\r\n");
-        /* 降低CPU占用 */
+                    break;
 
-
+                case CMD_GET_NOW_DETAIL:
         HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_NOW_DETAIL, FRAME_TAIL}, 3, 100);
         log_printf("UART TX CMD_GET_NOW_DETAIL...\r\n");
-        /* 降低CPU占用 */
-  
-        HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_AIR_DETAIL, FRAME_TAIL}, 3, 100);
-        log_printf("UART TX CMD_GET_AIR_DETAIL...\r\n");
-        /* 降低CPU占用 */
+                    break;
 
-
+                case CMD_GET_FUTURE_7DAY:
          HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_FUTURE_7DAY, FRAME_TAIL}, 3, 100);
         log_printf("UART TX CMD_GET_FUTURE_7DAY...\r\n");
-        /* 降低CPU占用 */
-  
+                    break;
+
+                case CMD_GET_AIR_DETAIL:
+        HAL_UART_Transmit(&huart1, (uint8_t[]){FRAME_HEAD, CMD_GET_AIR_DETAIL, FRAME_TAIL}, 3, 100);
+        log_printf("UART TX CMD_GET_AIR_DETAIL...\r\n");
+                    break;
+
+                default:
+                    break;
+            }    
 
         }
 
-
     }
 }
+
+
+
 
 typedef struct
 {
