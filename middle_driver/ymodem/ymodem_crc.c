@@ -111,3 +111,20 @@ uint8_t sum_update(uint8_t checksum, const uint8_t *data, uint16_t length) {
   }
   return checksum;
 }
+// 与 ESP32 保持一致的 CRC8 算法
+uint8_t stm32_calc_crc8(uint8_t *ptr, uint16_t len)
+{
+    uint8_t crc = 0x00;
+    while (len--)
+    {
+        crc ^= *ptr++;
+        for (uint8_t i = 8; i > 0; --i)
+        {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x31; // 多项式必须为 0x31
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}

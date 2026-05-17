@@ -1,4 +1,4 @@
-#include "file_transfer.h"
+#include "file_transfer_app.h"
 #include <string.h>
 #include "log.h"
 
@@ -6,7 +6,7 @@
 #include "spi.h" // 确保能用到 hspi1 等句柄
 /* 定义 Flash 设备句柄 */
 
-uart_dma_t uart1_admin; // 唯一实体的定义
+uart_dma_t uart3_admin; // 唯一实体的定义
 
 spi_flash_t flash_32mb = {0}; 
 // lfs_file_t file; 
